@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mock POP MART Booking</title>
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      background: #f9f9f9;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    section {
+      display: none;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .calendar button {
+      background: #fff;
+    }
+
+    .calendar button.active {
+      background-color: #ff4081;
+      color: white;
+    }
+
+    .calendar button:disabled {
+      background: #eee;
+      cursor: not-allowed;
+    }
+
+    .times {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .times button {
+      width: 30%;
+      background: #eee;
+    }
+
+    .times button.selected {
+      background: #ff4081;
+      color: white;
+    }
+
+    .checkbox-row {
+      margin-top: 20px;
+    }
+
+    .btn-pink {
+      background-color: #ff4081;
+      color: white;
+      border: none;
+    }
+
+    .btn-pink:disabled {
+      background-color: #ccc;
+    }
+
+    .selected {
+      background-color: #ff4081 !important;
+      color: white;
+    }
+
+    #summary {
+      margin-top: 20px;
+      font-size: 16px;
+      background: #fff0f5;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ffc0cb;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Mock จองคิว POP MART</h1>
+
+  <section id="step-1" class="active">
+    <button id="start-btn" class="btn-pink">Register</button>
+  </section>
+
+  <section id="step-2">
+    <label>Select Branch</label>
+    <div id="location-buttons" class="times">
+      <button data-location="centralworld">CentralWorld</button>
+      <button data-location="megabangna">Mega Bangna</button>
+      <button data-location="iconsiam">IconSiam</button>
+      <button data-location="iconsiam">Central Chiangmai</button>
+    </div>
+    <button id="next-to-date" class="btn-pink" disabled>Next</button>
+  </section>
+
+  <section id="step-3">
+    <label>เลือกวันที่</label>
+    <div class="calendar" id="calendar"></div>
+
+    <label style="margin-top:20px;">เลือกเวลา</label>
+    <div class="times" id="times"></div>
+
+    <button id="confirm-selection" class="btn-pink" disabled>ยืนยันการจอง</button>
+  </section>
+
+  <section id="step-4">
+    <div id="summary"></div>
+
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="not-robot"> ฉันไม่ใช่บอท</label>
+    </div>
+
+    <button id="final-confirm" class="btn-pink" disabled>Confirm Booking</button>
+  </section>
+
+  <script>
+    const startBtn = document.getElementById("start-btn");
+    const nextToDateBtn = document.getElementById("next-to-date");
+    const calendar = document.getElementById("calendar");
+    const times = document.getElementById("times");
+    const confirmBtn = document.getElementById("confirm-selection");
+    const notRobot = document.getElementById("not-robot");
+    const finalConfirm = document.getElementById("final-confirm");
+    const summary = document.getElementById("summary");
+    const locationButtons = document.querySelectorAll("#location-buttons button");
+
+    let selectedLocation = "";
+    let selectedDate = "";
+    let selectedTime = "";
+
+    function goToStep(stepNum) {
+      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+      document.getElementById("step-" + stepNum).classList.add("active");
+    }
+
+    startBtn.addEventListener("click", () => {
+      goToStep(2);
+    });
+
+    locationButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        selectedLocation = btn.dataset.location;
+        locationButtons.forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        nextToDateBtn.disabled = false;
+      });
+    });
+
+    nextToDateBtn.addEventListener("click", () => {
+      goToStep(3);
+      renderCalendar();
+    });
+
+    function renderCalendar() {
+      calendar.innerHTML = "";
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      const year = tomorrow.getFullYear();
+      const month = tomorrow.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let i = 1; i <= daysInMonth; i++) {
+        const date = new Date(year, month, i);
+        const dateStr = date.toISOString().split("T")[0];
+
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.dataset.date = dateStr;
+
+        if (date < tomorrow) {
+          btn.disabled = true;
+        } else {
+          btn.addEventListener("click", () => {
+            selectedDate = dateStr;
+            [...calendar.children].forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            renderTimeButtons();
+          });
+        }
+
+        calendar.appendChild(btn);
+      }
+    }
+
+    function renderTimeButtons() {
+      times.innerHTML = "";
+      const slots = ["10:00", "11:00", "12:00"];
+      slots.forEach(time => {
+        const btn = document.createElement("button");
+        btn.textContent = time;
+        btn.addEventListener("click", () => {
+          selectedTime = time;
+          [...times.children].forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          confirmBtn.disabled = false;
+        });
+        times.appendChild(btn);
+      });
+    }
+
+    confirmBtn.addEventListener("click", () => {
+      goToStep(4);
+      summary.innerHTML = `
+        <b>สถานที่:</b> ${document.querySelector("button.selected[data-location]").textContent}<br/>
+        <b>วันที่:</b> ${selectedDate}<br/>
+        <b>เวลา:</b> ${selectedTime}
+      `;
+    });
+
+    notRobot.addEventListener("change", () => {
+      finalConfirm.disabled = !notRobot.checked;
+    });
+
+    finalConfirm.addEventListener("click", () => {
+      alert("✅ ยืนยันการจองเรียบร้อยแล้ว!");
+    });
+  </script>
+
+</body>
+</html>
